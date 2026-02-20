@@ -14,7 +14,7 @@ def downloadShares(format='parquet'):
     folder = endpoint
     params = {"format":format}
     getPartitions(endpoint=endpoint,folder=folder,params=params);
-    pattern = _get_data_dir() / format / folder / "**/*.parquet"
+    pattern = data_dir / format / folder / "**/*.parquet"
     return str(pattern)
 
 def downloadReports(stamp='2026-01-30',ccy='eur',format='parquet'):
@@ -37,7 +37,7 @@ def downloadReports(stamp='2026-01-30',ccy='eur',format='parquet'):
     folder = ccy+'_reports'
     params = {"stamp":stamp,"ccy":ccy,"columns":"*","periods":periods}
     getPartitions(endpoint='reports',folder=folder,params=params,format=format,partitionOrder=["stamp","mod_20"]);
-    pattern = _get_data_dir() / format / folder / ("stamp="+stamp) / "**/*.parquet"
+    pattern = data_dir / format / folder / ("stamp="+stamp) / "**/*.parquet"
     return str(pattern)
 
 def downloadTimeseries(start,end,ccy='eur',format='parquet'):
@@ -56,7 +56,7 @@ def downloadTimeseries(start,end,ccy='eur',format='parquet'):
     folder = ccy+'_timeseries'
     params = {"from":start,"to":end,"ccy":ccy}
     getPartitions(endpoint=endpoint,folder=folder,params=params,format=format);
-    pattern = _get_data_dir() / format / folder / "**/*.parquet"
+    pattern = data_dir / format / folder / "**/*.parquet"
     return str(pattern)
 
 def downloadHoldings(format='parquet'):
@@ -72,7 +72,7 @@ def downloadHoldings(format='parquet'):
     folder = endpoint
     params = {}
     getPartitions(endpoint=endpoint,folder=folder,params=params,format=format);
-    pattern = _get_data_dir() / format / folder / "**/*.parquet"
+    pattern = data_dir / format / folder / "**/*.parquet"
     return str(pattern)
     
 def downloadLiquidity(start,end,format='parquet'):
@@ -90,5 +90,5 @@ def downloadLiquidity(start,end,format='parquet'):
     folder = endpoint
     params = {"from":start,"to":end}
     getPartitions(endpoint=endpoint,folder=folder,params=params,format=format);
-    pattern = _get_data_dir() / format / folder / "**/*.parquet"
+    pattern = data_dir / format / folder / "**/*.parquet"
     return str(pattern)
