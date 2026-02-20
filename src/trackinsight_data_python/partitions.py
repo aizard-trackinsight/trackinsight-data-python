@@ -177,7 +177,7 @@ def getPartitions(endpoint,folder=None,params={},format="parquet",partitionOrder
             i = future_to_i[fut]
             results[i] = fut.result()
             progress = progress+1
-            inline_print(f'loading progress: {round(100 * progress / total,0)}%')
+            inline_print(f'loading {endpoint}... {round(100 * progress / total,0)}%')
         print('\n')
     
     if folder is None and len(results) > 0:
