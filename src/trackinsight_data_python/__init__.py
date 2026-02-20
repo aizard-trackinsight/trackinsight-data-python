@@ -14,6 +14,10 @@ _API_EXPORTS = [
     "downloadTimeseries",
     "downloadHoldings",
     "downloadLiquidity",
+    "contains_any",
+    "contains_all",
+    "single_among",
+    "contains_exact",
 ]
 
 __all__ = ["main", *_API_EXPORTS]
@@ -30,6 +34,10 @@ _EXPORT_MODULES = {
     "downloadTimeseries": ".download",
     "downloadHoldings": ".download",
     "downloadLiquidity": ".download",
+    "contains_any": ".helpers",
+    "contains_all": ".helpers",
+    "single_among": ".helpers",
+    "contains_exact": ".helpers",
 }
 
 
