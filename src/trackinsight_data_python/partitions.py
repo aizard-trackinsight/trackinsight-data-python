@@ -13,9 +13,17 @@ from dateutil.relativedelta import relativedelta
 
 load_dotenv()
 host = os.getenv("API_HOST")
+if host is None:
+    raise RuntimeError("Environment variable API_HOST is not defined")
+
 key = os.getenv("API_KEY")
-data_dir = Path(os.getenv("API_STORAGE"))
+if key is None:
+    raise RuntimeError("Environment variable API_KEY is not defined")
+
+data_dir = Path(os.getenv("API_STORAGE","trackinsight_data"))
 data_dir.mkdir(parents=True,exist_ok=True)
+max_workers = os.getenv("API_DL_WORKERS",10)
+
 
 def inline_print(msg):
     """Print a message in place on the current terminal line.
