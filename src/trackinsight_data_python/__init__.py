@@ -18,6 +18,7 @@ _API_EXPORTS = [
     "contains_all",
     "single_among",
     "contains_exact",
+    "contains_any_joined",
 ]
 
 __all__ = ["main", *_API_EXPORTS]
@@ -38,6 +39,7 @@ _EXPORT_MODULES = {
     "contains_all": ".helpers",
     "single_among": ".helpers",
     "contains_exact": ".helpers",
+    "contains_any_joined": ".helpers",
 }
 
 

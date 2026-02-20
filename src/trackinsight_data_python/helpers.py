@@ -4,12 +4,12 @@ def contains_any(column,values):
     return pl.col(column).list.eval(
         pl.element().is_in(values)
     ).list.any()
-    
+
 def contains_all(column,values):
     return pl.col(column).list.eval(
             pl.element().is_in(values)
         ).list.sum() == len(values)
-    
+
 def single_among(column,values):
     return (
         (pl.col(column).list.len() == 1) &
@@ -17,3 +17,6 @@ def single_among(column,values):
 
 def contains_exact(column,values):
     return pl.col(column).list.sort() == sorted(values)
+
+def contains_any_joined(column, values,sep=';'):
+    return pl.col(column).list.sort().list.join(sep).is_in(values)
