@@ -5,27 +5,26 @@ import requests
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from dotenv import load_dotenv
 from io import BytesIO
 from urllib.parse import urlencode
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
-load_dotenv()
-host = os.getenv("API_HOST")
-if host is None:
-    raise RuntimeError("Environment variable API_HOST is not defined")
+def read_vars():
+    key = os.getenv("TRACK_API_KEY")
+    if key is None:
+        print("Environment variable TRACK_API_KEY is not defined")
+        raise RuntimeError("Environment variable TRACK_API_KEY is not defined")
 
-key = os.getenv("API_KEY")
-if key is None:
-    raise RuntimeError("Environment variable API_KEY is not defined")
+    host = os.getenv("TRACK_API_HOST","https://cloud.datasets.sh/e/trackinsight-standard/v2")
+    data_dir = Path(os.getenv("TRACK_API_STORAGE","trackinsight_data"))
+    data_dir.mkdir(parents=True,exist_ok=True)
+    max_workers = os.getenv("TRACK_API_DL_WORKERS",10)
+    verify_cert = os.getenv("TRACK_API_VERIFY_CERT", "true").lower() == "true"
+    return [host, key, data_dir, max_workers, verify_cert]
 
-data_dir = Path(os.getenv("API_STORAGE","trackinsight_data"))
-data_dir.mkdir(parents=True,exist_ok=True)
-max_workers = os.getenv("API_DL_WORKERS",10)
 
-
-def inline_print(msg):
+def inline_print(msg,last=False):
     """Print a message in place on the current terminal line.
 
     Args:
@@ -34,18 +33,19 @@ def inline_print(msg):
     Returns:
         None: This function only writes to stdout.
     """
-    print(f"\r{msg}", end="", flush=True)
+    print(f"\r{msg}", end="\n" if last else "", flush=True)
 
 def getURL(endpoint,params):
     """Build an API URL from an endpoint and query parameters.
 
     Args:
-        endpoint (str): API endpoint path relative to ``API_HOST``.
+        endpoint (str): API endpoint path relative to ``TRACK_API_HOST``.
         params (dict | None): Query parameters. Keys with ``None`` values are skipped.
 
     Returns:
         str: Fully qualified request URL.
     """
+    [host, key, data_dir, max_workers, verify_cert] = read_vars()
     qparams =""
     if params is not None:
         qparams = "&"+urlencode({k: v for k, v in params.items() if v is not None})
@@ -57,14 +57,18 @@ def getJSON(endpoint,params=""):
     """Execute a JSON request and return payload and response headers.
 
     Args:
-        endpoint (str): API endpoint path relative to ``API_HOST``.
+        endpoint (str): API endpoint path relative to ``TRACK_API_HOST``.
         params (dict | str, optional): Query parameters passed to ``getURL``.
 
     Returns:
         list: Two-item list ``[data, headers]`` from the HTTP response.
     """
+
+    [host, key, data_dir, max_workers,verify_cert] = read_vars()
+
     url = getURL(endpoint,params,)
-    response = requests.get(url,headers={"X-API-KEY":key})
+    
+    response = requests.get(url,verify=verify_cert,headers={"X-API-KEY":key})
     response.raise_for_status()   # raises error if the request failed
     data = response.json()
     return [data, response.headers]
@@ -76,7 +80,7 @@ def getPartition(endpoint,partition_params,folder=None,partitionPath="",format='
     Args:
         endpoint (str): Dataset endpoint name.
         partition_params (dict): Partition-specific query parameters.
-        folder (str | None, optional): Output folder relative to ``API_STORAGE``.
+        folder (str | None, optional): Output folder relative to ``TRACK_API_STORAGE``.
             When ``None``, data is returned in memory.
         partitionPath (str, optional): Nested subpath used for partitioned output.
         format (str, optional): Response format (for example ``parquet`` or ``json``).
@@ -84,8 +88,9 @@ def getPartition(endpoint,partition_params,folder=None,partitionPath="",format='
     Returns:
         polars.DataFrame | None: In-memory data when ``folder`` is ``None``; otherwise ``None``.
     """
-    
-    data_dir = Path(os.getenv("API_STORAGE"))
+    [host, key, data_dir, max_workers, verify_cert] = read_vars()
+
+    data_dir = Path(os.getenv("TRACK_API_STORAGE"))
     
     if folder is not None: # When writing to disk
         output_folder = data_dir / folder / partitionPath
@@ -94,7 +99,10 @@ def getPartition(endpoint,partition_params,folder=None,partitionPath="",format='
         
     url = getURL('data/'+endpoint,partition_params)
     
-    with requests.get(url,headers={"X-API-KEY":key},stream=(folder is not None), timeout=60) as r:
+    if os.getenv("TRACK_API_LOG")=='DEBUG':
+        print(url)
+    
+    with requests.get(url,verify=verify_cert,headers={"X-API-KEY":key},stream=(folder is not None), timeout=60) as r:
         if r.status_code == 500:
             print(r.text)
         r.raise_for_status()
@@ -133,10 +141,13 @@ def getPartitions(endpoint,folder=None,params={},format="parquet",partitionOrder
         polars.DataFrame | list: Concatenated DataFrame when ``folder`` is ``None``;
             otherwise a list of per-partition results.
     """
+    [host, key, data_dir, max_workers, verify_cert] = read_vars()
+
     [data, headers] = getJSON('partitions/'+endpoint, params)
     transactionId = data["result"]["transactionId"]
     partitions = data["result"]["partitions"]
     results = [None] * len(partitions)
+    # print(data)
 
     args = []
     for partition in partitions:
@@ -173,14 +184,18 @@ def getPartitions(endpoint,folder=None,params={},format="parquet",partitionOrder
             args["partitionPath"],
             args["format"]): i for i, args in enumerate(args)}
         
+        # print('\n')
         for fut in as_completed(future_to_i):
             i = future_to_i[fut]
             results[i] = fut.result()
             progress = progress+1
-            inline_print(f'loading {endpoint}... {round(100 * progress / total,0)}%')
-        print('\n')
+            inline_print(f'loading {endpoint}... {round(100 * progress / total,0)}% of {total} partitions', last=(progress==total))
     
-    if folder is None and len(results) > 0:
-        return pl.concat(results, how="vertical_relaxed")
+    
+    if folder is None:
+        if len(results) > 0:
+            return pl.concat(results, how="vertical_relaxed")
+        else:
+            return None
     else:
         return results

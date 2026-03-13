@@ -1,4 +1,4 @@
-from .partitions import getJSON,getPartitions,data_dir
+from .partitions import getJSON,getPartitions,read_vars
 
 
 def downloadShares(format='parquet'):
@@ -14,7 +14,11 @@ def downloadShares(format='parquet'):
     folder = endpoint
     params = {"format":format}
     getPartitions(endpoint=endpoint,folder=folder,params=params);
+    
+    [host, key, data_dir, max_workers, verify_cert] = read_vars()
+
     pattern = data_dir / format / folder / "**/*.parquet"
+
     return str(pattern)
 
 def downloadReports(stamp='2026-01-30',ccy='eur',format='parquet'):
@@ -37,7 +41,11 @@ def downloadReports(stamp='2026-01-30',ccy='eur',format='parquet'):
     folder = ccy+'_reports'
     params = {"stamp":stamp,"ccy":ccy,"columns":"*","periods":periods}
     getPartitions(endpoint='reports',folder=folder,params=params,format=format,partitionOrder=["stamp","mod_20"]);
+    
+    [host, key, data_dir, max_workers, verify_cert] = read_vars()
+    
     pattern = data_dir / format / folder / ("stamp="+stamp) / "**/*.parquet"
+    
     return str(pattern)
 
 def downloadTimeseries(start,end,ccy='eur',format='parquet'):
@@ -55,23 +63,35 @@ def downloadTimeseries(start,end,ccy='eur',format='parquet'):
     endpoint = 'timeseries'
     folder = ccy+'_timeseries'
     params = {"from":start,"to":end,"ccy":ccy}
+    
     getPartitions(endpoint=endpoint,folder=folder,params=params,format=format);
+    
+    [host, key, data_dir, max_workers, verify_cert] = read_vars()
+    
     pattern = data_dir / format / folder / "**/*.parquet"
+    
     return str(pattern)
 
-def downloadHoldings(format='parquet'):
+def downloadHoldings(format='parquet',proxy=True,level=0,extraLines=False):
     """Download holdings partitions to disk and return the output file pattern.
 
     Args:
         format (str, optional): File format requested from the API.
+        proxy (bool, optional): Whether to include proxy holdings.
+        level (int, optional): The depth at which ETFs containing other ETFs are expanded in portfolios. 0 = no expansion, 1 = expand ETFs once, 2 = expand ETFs of ETFs recursively
+        extraLines (bool, optional): Whether to include special portfolio lines (????????CASH, ??DERIVATIVE, ?????NOTCASH, ?????UNKNOWN)
 
     Returns:
         str: Glob pattern pointing to downloaded files on disk.
     """
     endpoint = 'holdings'
     folder = endpoint
-    params = {}
+    
+    params = { "proxy":"true" if proxy else "false", "level":level,"extraLines":"true" if extraLines else "false" }
     getPartitions(endpoint=endpoint,folder=folder,params=params,format=format);
+    
+    [host, key, data_dir, max_workers, verify_cert] = read_vars()
+    
     pattern = data_dir / format / folder / "**/*.parquet"
     return str(pattern)
     
@@ -90,5 +110,9 @@ def downloadLiquidity(start,end,format='parquet'):
     folder = endpoint
     params = {"from":start,"to":end}
     getPartitions(endpoint=endpoint,folder=folder,params=params,format=format);
+    
+    [host, key, data_dir, max_workers, verify_cert] = read_vars()
+    
     pattern = data_dir / format / folder / "**/*.parquet"
+    
     return str(pattern)
