@@ -129,17 +129,18 @@ def getHoldings(ids=None, proxy=True, level=0, extraLines=False):
     return data
 
 
-def getLiquidity(start,end,ids=None):
+def getLiquidity(start,end,ccy='eur',ids=None):
     """Load liquidity rows for the provided date range.
 
     Args:
         start (str): Start date (inclusive), in ``YYYY-MM-DD`` format.
         end (str): End date (inclusive), in ``YYYY-MM-DD`` format.
+        ccy (str, optional): Currency code.
 
     Returns:
         polars.DataFrame: In-memory liquidity data returned by ``getPartitions``.
     """
-    params = {"from":start,"to":end}
+    params = {"from":start,"to":end,"ccy":ccy}
 
     if (ids is not None) and (len(ids) <= idsLimit):
         params["ids"] = ",".join([str(i) for i in ids])
@@ -150,3 +151,27 @@ def getLiquidity(start,end,ids=None):
             data = data.filter(pl.col("share_id").is_in(ids))
     return data
     
+
+def getLiquiditySummary(start,end,ccy='eur',ids=None):
+    """Load liquidity summary rows for the provided date range.
+
+    Args:
+        start (str): Start date (inclusive), in ``YYYY-MM-DD`` format.
+        end (str): End date (inclusive), in ``YYYY-MM-DD`` format.
+        ccy (str, optional): Currency code.
+
+
+    Returns:
+        polars.DataFrame: In-memory liquidity summary data returned by ``getPartitions``.
+    """
+    endpoint = 'liquidity_summary'
+    params = {"from":start,"to":end,"ccy":ccy}
+
+    if (ids is not None) and (len(ids) <= idsLimit):
+        params["ids"] = ",".join([str(i) for i in ids])
+    data = getPartitions(endpoint=endpoint,params=params)
+
+    if data is not None:
+        if (ids is not None) and (len(ids) > idsLimit):
+            data = data.filter(pl.col("share_id").is_in(ids))
+    return data

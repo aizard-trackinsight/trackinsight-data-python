@@ -95,20 +95,44 @@ def downloadHoldings(format='parquet',proxy=True,level=0,extraLines=False):
     pattern = data_dir / format / folder / "**/*.parquet"
     return str(pattern)
     
-def downloadLiquidity(start,end,format='parquet'):
+def downloadLiquidity(start,end,ccy='eur',format='parquet'):
     """Download liquidity partitions for a date range and return the output pattern.
 
     Args:
         start (str): Start date (inclusive), in ``YYYY-MM-DD`` format.
         end (str): End date (inclusive), in ``YYYY-MM-DD`` format.
+        ccy (str, optional): Currency code.
         format (str, optional): File format requested from the API.
 
     Returns:
         str: Glob pattern pointing to downloaded files on disk.
     """
     endpoint = 'liquidity'
-    folder = endpoint
-    params = {"from":start,"to":end}
+    folder = ccy+"_"+endpoint
+    params = {"from":start,"to":end,"ccy":ccy}
+    getPartitions(endpoint=endpoint,folder=folder,params=params,format=format);
+    
+    [host, key, data_dir, max_workers, verify_cert] = read_vars()
+    
+    pattern = data_dir / format / folder / "**/*.parquet"
+    
+    return str(pattern)
+
+def downloadLiquiditySummary(start,end,ccy='eur',format='parquet'):
+    """Download liquidity summary partitions for a date range and return the output pattern.
+
+    Args:
+        start (str): Start date (inclusive), in ``YYYY-MM-DD`` format.
+        end (str): End date (inclusive), in ``YYYY-MM-DD`` format.
+        ccy (str, optional): Currency code.
+        format (str, optional): File format requested from the API.
+
+    Returns:
+        str: Glob pattern pointing to downloaded files on disk.
+    """
+    endpoint = 'liquidity_summary'
+    folder = ccy+"_"+endpoint
+    params = {"from":start,"to":end,"ccy":ccy}
     getPartitions(endpoint=endpoint,folder=folder,params=params,format=format);
     
     [host, key, data_dir, max_workers, verify_cert] = read_vars()
