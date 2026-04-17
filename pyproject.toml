@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "trackinsight-data-python"
-version = "0.1.5"
+version = "0.1.6"
 description = "A library to load data from the Trackinsight API"
 readme = "README.md"
 requires-python = ">=3.10"

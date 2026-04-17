@@ -21,7 +21,7 @@ def _require_api_runtime() -> None:
 
     missing = [
         key
-        for key in ("API_HOST", "API_KEY", "API_STORAGE")
+        for key in [ "TRACK_API_KEY" ]
         if not os.getenv(key)
     ]
     if missing:
@@ -56,3 +56,7 @@ def test_get_timeseries_does_not_raise():
 def test_get_liquidity_does_not_raise():
     _require_api_runtime()
     api.getLiquidity(start="2026-01-01", end="2026-01-31")
+
+def test_get_liquidity_summary_does_not_raise():
+    _require_api_runtime()
+    api.getLiquiditySummary(start="2026-01-01", end="2026-01-31")

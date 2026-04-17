@@ -19,7 +19,7 @@ def read_vars():
     host = os.getenv("TRACK_API_HOST","https://cloud.datasets.sh/e/trackinsight-standard/v2")
     data_dir = Path(os.getenv("TRACK_API_STORAGE","trackinsight_data"))
     data_dir.mkdir(parents=True,exist_ok=True)
-    max_workers = os.getenv("TRACK_API_DL_WORKERS",10)
+    max_workers = int(os.getenv("TRACK_API_DL_WORKERS",10))
     verify_cert = os.getenv("TRACK_API_VERIFY_CERT", "true").lower() == "true"
     return [host, key, data_dir, max_workers, verify_cert]
 
@@ -53,12 +53,12 @@ def getURL(endpoint,params):
     url = host+"/"+endpoint+"?"+qparams
     return url
 
-def getJSON(endpoint,params=""):
+def getJSON(endpoint,params=None):
     """Execute a JSON request and return payload and response headers.
 
     Args:
         endpoint (str): API endpoint path relative to ``TRACK_API_HOST``.
-        params (dict | str, optional): Query parameters passed to ``getURL``.
+        params (dict | None): Query parameters passed to ``getURL``.
 
     Returns:
         list: Two-item list ``[data, headers]`` from the HTTP response.
@@ -89,8 +89,6 @@ def getPartition(endpoint,partition_params,folder=None,partitionPath="",format='
         polars.DataFrame | None: In-memory data when ``folder`` is ``None``; otherwise ``None``.
     """
     [host, key, data_dir, max_workers, verify_cert] = read_vars()
-
-    data_dir = Path(os.getenv("TRACK_API_STORAGE"))
     
     if folder is not None: # When writing to disk
         output_folder = data_dir / folder / partitionPath
@@ -175,7 +173,7 @@ def getPartitions(endpoint,folder=None,params={},format="parquet",partitionOrder
         
     progress = 0
     total = len(args)
-    with ThreadPoolExecutor(max_workers=10) as pool:
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
         future_to_i = { pool.submit(
             getPartition,
             args["endpoint"],

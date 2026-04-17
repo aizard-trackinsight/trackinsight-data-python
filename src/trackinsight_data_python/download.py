@@ -12,12 +12,12 @@ def downloadShares(format='parquet'):
     """
     endpoint='shares'
     folder = endpoint
-    params = {"format":format}
-    getPartitions(endpoint=endpoint,folder=folder,params=params);
+    params = {}
+    getPartitions(endpoint=endpoint,folder=folder,params=params,format=format);
     
     [host, key, data_dir, max_workers, verify_cert] = read_vars()
 
-    pattern = data_dir / format / folder / "**/*.parquet"
+    pattern = data_dir / format / folder / ("**/*."+format)
 
     return str(pattern)
 
@@ -44,7 +44,7 @@ def downloadReports(stamp='2026-01-30',ccy='eur',format='parquet'):
     
     [host, key, data_dir, max_workers, verify_cert] = read_vars()
     
-    pattern = data_dir / format / folder / ("stamp="+stamp) / "**/*.parquet"
+    pattern = data_dir / format / folder / ("stamp="+stamp) / ("**/*."+format)
     
     return str(pattern)
 
@@ -68,7 +68,7 @@ def downloadTimeseries(start,end,ccy='eur',format='parquet'):
     
     [host, key, data_dir, max_workers, verify_cert] = read_vars()
     
-    pattern = data_dir / format / folder / "**/*.parquet"
+    pattern = data_dir / format / folder / ("**/*."+format)
     
     return str(pattern)
 
@@ -92,7 +92,7 @@ def downloadHoldings(format='parquet',proxy=True,level=0,extraLines=False):
     
     [host, key, data_dir, max_workers, verify_cert] = read_vars()
     
-    pattern = data_dir / format / folder / "**/*.parquet"
+    pattern = data_dir / format / folder / ("**/*."+format)
     return str(pattern)
     
 def downloadLiquidity(start,end,ccy='eur',format='parquet'):
@@ -114,7 +114,7 @@ def downloadLiquidity(start,end,ccy='eur',format='parquet'):
     
     [host, key, data_dir, max_workers, verify_cert] = read_vars()
     
-    pattern = data_dir / format / folder / "**/*.parquet"
+    pattern = data_dir / format / folder / ("**/*."+format)
     
     return str(pattern)
 
@@ -137,6 +137,6 @@ def downloadLiquiditySummary(start,end,ccy='eur',format='parquet'):
     
     [host, key, data_dir, max_workers, verify_cert] = read_vars()
     
-    pattern = data_dir / format / folder / "**/*.parquet"
+    pattern = data_dir / format / folder / ("**/*."+format)
     
     return str(pattern)

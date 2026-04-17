@@ -19,7 +19,7 @@ def getMetadata(asDataFrame=False):
     for ccy in ['usd','eur']:
         [data, headers] = getJSON('partitions/reports',{"ccy":ccy})
         partitions=(data.get('result').get('partitions'))
-        metadata["reportsAsOf"][ccy]=list({d["stamp"] for d in partitions})
+        metadata["reportsAsOf"][ccy]=sorted({d["stamp"] for d in partitions})
     [data, headers] = getJSON('partitions/holdings',{})
     partitions=(data.get('result').get('partitions'))
     metadata["holdingsAsOf"]["year"]=list({d["year"] for d in partitions})[0]
@@ -73,7 +73,9 @@ def getReports(stamp=None,ccy='eur',ids=None,periods=None):
         stamp (str, optional): Report valuation date in ``YYYY-MM-DD`` format.
         ccy (str, optional): Currency code.
         ids (list[int] | tuple[int] | None, optional): Optional share IDs to filter.
-        periods (str | None, optional): Comma-separated report periods to request.
+        periods (list[str] | tuple[str, ...] | None, optional): Report periods to request,
+            for example ``["one-day", "one-week", "year-to-date"]``.
+            When ``None``, the default report periods are requested.
     Returns:
         polars.DataFrame: In-memory report data returned by ``getPartitions``.
     """
@@ -82,7 +84,7 @@ def getReports(stamp=None,ccy='eur',ids=None,periods=None):
         ccy = 'eur'
         
     if stamp is None:
-        stamp = getMetadata()["reportsAsOf"][ccy][-1]
+        stamp = max(getMetadata()["reportsAsOf"][ccy])
 
     if periods is None:
         periods = [

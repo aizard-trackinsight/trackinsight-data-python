@@ -36,7 +36,7 @@ load_dotenv(override=True)
 
 ccy='usd'
 metadata= API.getMetadata()
-stamp = metadata["reportsAsOf"][ccy][-1] # get latest stamp for reports
+stamp = max(metadata["reportsAsOf"][ccy]) # get latest stamp for reports
 
 reports = API.getReports(ccy=ccy,stamp=stamp) # reports is a Polars DataFrame, you can use .to_pandas() to convert it to a Pandas DataFrame
 
