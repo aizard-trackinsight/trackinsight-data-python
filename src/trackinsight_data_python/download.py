@@ -1,4 +1,12 @@
-from .partitions import getJSON,getPartitions,read_vars
+from ._params import (
+    build_holdings_params,
+    build_liquidity_params,
+    build_reports_params,
+    build_shares_params,
+    build_timeseries_params,
+)
+from .api import getMetadata
+from .partitions import getPartitions,read_vars
 
 
 def downloadShares(format='parquet'):
@@ -12,38 +20,40 @@ def downloadShares(format='parquet'):
     """
     endpoint='shares'
     folder = endpoint
-    params = {}
+    params = build_shares_params()
     getPartitions(endpoint=endpoint,folder=folder,params=params,format=format);
-    
+
     [host, key, data_dir, max_workers, verify_cert] = read_vars()
 
     pattern = data_dir / format / folder / ("**/*."+format)
 
     return str(pattern)
 
-def downloadReports(stamp='2026-01-30',ccy='eur',format='parquet'):
+def downloadReports(stamp=None,ccy='eur',format='parquet',periods=None):
     """Download report partitions for the given stamp and return the output pattern.
 
     Args:
-        stamp (str, optional): Report valuation date in ``YYYY-MM-DD`` format.
+        stamp (str | None, optional): Report valuation date in ``YYYY-MM-DD`` format.
+            When ``None``, the latest available stamp for ``ccy`` is used.
         ccy (str, optional): Currency code.
         format (str, optional): File format requested from the API.
+        periods (list[str] | tuple[str, ...] | None, optional): Report periods to request.
 
     Returns:
         str: Glob pattern pointing to downloaded files on disk.
     """
-    periods = ",".join([
-        "one-day", "one-week",
-        "month-to-date", "three-month-to-date",
-        "year-to-date", "one-year-to-date", "three-year"
-    ])
     endpoint = 'reports'
     folder = ccy+'_reports'
-    params = {"stamp":stamp,"ccy":ccy,"columns":"*","periods":periods}
+    params, stamp = build_reports_params(
+        stamp=stamp,
+        ccy=ccy,
+        periods=periods,
+        metadata_loader=getMetadata,
+    )
     getPartitions(endpoint='reports',folder=folder,params=params,format=format,partitionOrder=["stamp","mod_20"]);
     
     [host, key, data_dir, max_workers, verify_cert] = read_vars()
-    
+
     pattern = data_dir / format / folder / ("stamp="+stamp) / ("**/*."+format)
     
     return str(pattern)
@@ -62,12 +72,12 @@ def downloadTimeseries(start,end,ccy='eur',format='parquet'):
     """
     endpoint = 'timeseries'
     folder = ccy+'_timeseries'
-    params = {"from":start,"to":end,"ccy":ccy}
+    params = build_timeseries_params(start=start, end=end, ccy=ccy)
     
     getPartitions(endpoint=endpoint,folder=folder,params=params,format=format);
     
     [host, key, data_dir, max_workers, verify_cert] = read_vars()
-    
+
     pattern = data_dir / format / folder / ("**/*."+format)
     
     return str(pattern)
@@ -87,11 +97,11 @@ def downloadHoldings(format='parquet',proxy=True,level=0,extraLines=False):
     endpoint = 'holdings'
     folder = endpoint
     
-    params = { "proxy":"true" if proxy else "false", "level":level,"extraLines":"true" if extraLines else "false" }
+    params = build_holdings_params(proxy=proxy, level=level, extraLines=extraLines)
     getPartitions(endpoint=endpoint,folder=folder,params=params,format=format);
     
     [host, key, data_dir, max_workers, verify_cert] = read_vars()
-    
+
     pattern = data_dir / format / folder / ("**/*."+format)
     return str(pattern)
     
@@ -109,11 +119,11 @@ def downloadLiquidity(start,end,ccy='eur',format='parquet'):
     """
     endpoint = 'liquidity'
     folder = ccy+"_"+endpoint
-    params = {"from":start,"to":end,"ccy":ccy}
+    params = build_liquidity_params(start=start, end=end, ccy=ccy)
     getPartitions(endpoint=endpoint,folder=folder,params=params,format=format);
     
     [host, key, data_dir, max_workers, verify_cert] = read_vars()
-    
+
     pattern = data_dir / format / folder / ("**/*."+format)
     
     return str(pattern)
@@ -132,11 +142,11 @@ def downloadLiquiditySummary(start,end,ccy='eur',format='parquet'):
     """
     endpoint = 'liquidity_summary'
     folder = ccy+"_"+endpoint
-    params = {"from":start,"to":end,"ccy":ccy}
+    params = build_liquidity_params(start=start, end=end, ccy=ccy)
     getPartitions(endpoint=endpoint,folder=folder,params=params,format=format);
     
     [host, key, data_dir, max_workers, verify_cert] = read_vars()
-    
+
     pattern = data_dir / format / folder / ("**/*."+format)
     
     return str(pattern)

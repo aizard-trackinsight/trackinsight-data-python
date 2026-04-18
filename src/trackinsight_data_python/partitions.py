@@ -92,6 +92,8 @@ def getPartition(endpoint,partition_params,folder=None,partitionPath="",format='
     
     if folder is not None: # When writing to disk
         output_folder = data_dir / folder / partitionPath
+        if output_folder.exists():
+            shutil.rmtree(output_folder)
         output_folder.mkdir(parents=True,exist_ok=True)
         output_filepath = output_folder / ("data."+format)
         

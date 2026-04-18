@@ -1,10 +1,16 @@
+from ._params import (
+    build_holdings_params,
+    build_liquidity_params,
+    build_reports_params,
+    build_shares_params,
+    build_timeseries_params,
+    should_filter_ids_locally,
+)
 from .partitions import getJSON,getPartitions
 import polars as pl
 
 # Functions to load data into in-memory data frames
 
-
-idsLimit = 1000
 
 def getMetadata(asDataFrame=False):
     """Fetch available report partition stamps grouped by currency.
@@ -38,7 +44,7 @@ def getShares():
     Returns:
         polars.DataFrame: In-memory shares data returned by ``getPartitions``.
     """
-    params = {}
+    params = build_shares_params()
     return getPartitions(endpoint="shares",params=params)
 
 def getTimeseries(start='2019-01-01',end=None,ccy='eur',ids=None):
@@ -54,14 +60,11 @@ def getTimeseries(start='2019-01-01',end=None,ccy='eur',ids=None):
         polars.DataFrame: In-memory timeseries data returned by ``getPartitions``.
     """
     
-    params = {"from":start,"to":end,"ccy":ccy}
-
-    if ids is not None and len(ids) <= idsLimit:
-        params["ids"] = ",".join([str(i) for i in ids])
+    params = build_timeseries_params(start=start, end=end, ccy=ccy, ids=ids)
     data = getPartitions(endpoint="timeseries",params=params)
 
     if data is not None:
-        if ids is not None and len(ids) > idsLimit:
+        if should_filter_ids_locally(ids):
             data = data.filter(pl.col("id").is_in(ids))
 
     return data
@@ -80,27 +83,18 @@ def getReports(stamp=None,ccy='eur',ids=None,periods=None):
         polars.DataFrame: In-memory report data returned by ``getPartitions``.
     """
     
-    if ccy is None:
-        ccy = 'eur'
-        
-    if stamp is None:
-        stamp = max(getMetadata()["reportsAsOf"][ccy])
+    params, stamp = build_reports_params(
+        stamp=stamp,
+        ccy=ccy,
+        ids=ids,
+        periods=periods,
+        metadata_loader=getMetadata,
+    )
 
-    if periods is None:
-        periods = [
-            "one-day", "one-week",
-            "month-to-date", "three-month-to-date",
-            "year-to-date", "one-year-to-date", "three-year"
-        ]
-    
-    params = {"stamp":stamp,"ccy":ccy,"columns":"*","periods":",".join(periods)}
-
-    if (ids is not None) and (len(ids) <= idsLimit):
-        params["ids"] = ",".join([str(i) for i in ids])
     data = getPartitions(endpoint="reports",params=params)
 
     if data is not None:
-        if (ids is not None) and (len(ids) > idsLimit):
+        if should_filter_ids_locally(ids):
             data = data.filter(pl.col("share_id").is_in(ids))
 
     return data
@@ -118,14 +112,17 @@ def getHoldings(ids=None, proxy=True, level=0, extraLines=False):
     Returns:
         polars.DataFrame: In-memory holdings data returned by ``getPartitions``.
     """
-    params = { "proxy":"true" if proxy else "false", "level":level, "extraLines":"true" if extraLines else "false" }
+    params = build_holdings_params(
+        ids=ids,
+        proxy=proxy,
+        level=level,
+        extraLines=extraLines,
+    )
 
-    if (ids is not None) and (len(ids) <= idsLimit):
-        params["ids"] = ",".join([str(i) for i in ids])
     data = getPartitions(endpoint="holdings",params=params)
 
     if data is not None:
-        if (ids is not None) and (len(ids) > idsLimit):
+        if should_filter_ids_locally(ids):
             data = data.filter(pl.col("share_id").is_in(ids))
 
     return data
@@ -142,14 +139,12 @@ def getLiquidity(start,end,ccy='eur',ids=None):
     Returns:
         polars.DataFrame: In-memory liquidity data returned by ``getPartitions``.
     """
-    params = {"from":start,"to":end,"ccy":ccy}
+    params = build_liquidity_params(start=start, end=end, ccy=ccy, ids=ids)
 
-    if (ids is not None) and (len(ids) <= idsLimit):
-        params["ids"] = ",".join([str(i) for i in ids])
     data = getPartitions(endpoint="liquidity",params=params)
 
     if data is not None:
-        if (ids is not None) and (len(ids) > idsLimit):
+        if should_filter_ids_locally(ids):
             data = data.filter(pl.col("share_id").is_in(ids))
     return data
     
@@ -167,13 +162,11 @@ def getLiquiditySummary(start,end,ccy='eur',ids=None):
         polars.DataFrame: In-memory liquidity summary data returned by ``getPartitions``.
     """
     endpoint = 'liquidity_summary'
-    params = {"from":start,"to":end,"ccy":ccy}
+    params = build_liquidity_params(start=start, end=end, ccy=ccy, ids=ids)
 
-    if (ids is not None) and (len(ids) <= idsLimit):
-        params["ids"] = ",".join([str(i) for i in ids])
     data = getPartitions(endpoint=endpoint,params=params)
 
     if data is not None:
-        if (ids is not None) and (len(ids) > idsLimit):
+        if should_filter_ids_locally(ids):
             data = data.filter(pl.col("share_id").is_in(ids))
     return data
