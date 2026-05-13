@@ -81,6 +81,12 @@ shares_df = API.getShares()
 Loads the full shares dataset into a Polars DataFrame.
 
 ```python
+stock_flows_df = API.getStockFlows(format='parquet')
+```
+
+Loads the full stock flows dataset into a Polars DataFrame. `format` must be one of the supported formats and defaults to `parquet`.
+
+```python
 timeseries_df = API.getTimeseries(start='2019-01-01', end=None, ccy='eur', ids=None)
 ```
 
@@ -119,6 +125,12 @@ API.downloadShares(format='parquet')
 ```
 
 Downloads the shares dataset to disk and returns a glob pattern for the downloaded files. `format` must be one of the supported formats and defaults to `parquet`.
+
+```python
+API.downloadStockFlows(format='parquet')
+```
+
+Downloads the stock flows dataset to disk and returns a glob pattern for the downloaded files. `format` must be one of the supported formats and defaults to `parquet`.
 
 ```python
 API.downloadReports(stamp=None, ccy='eur', format='parquet', periods=None)

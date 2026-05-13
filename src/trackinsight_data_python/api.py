@@ -3,6 +3,7 @@ from ._params import (
     build_liquidity_params,
     build_reports_params,
     build_shares_params,
+    build_stock_flows_params,
     build_timeseries_params,
     should_filter_ids_locally,
 )
@@ -21,15 +22,22 @@ def getMetadata(asDataFrame=False):
     Returns:
         dict: Metadata dictionary with report partition stamps by currency.
     """
-    metadata = {"reportsAsOf":{},'holdingsAsOf':{}}
+    metadata = {"reportsAsOf":{},'holdingsAsOf':{},"stockFlows":{}}
     for ccy in ['usd','eur']:
         [data, headers] = getJSON('partitions/reports',{"ccy":ccy})
         partitions=(data.get('result').get('partitions'))
         metadata["reportsAsOf"][ccy]=sorted({d["stamp"] for d in partitions})
+    
     [data, headers] = getJSON('partitions/holdings',{})
     partitions=(data.get('result').get('partitions'))
     metadata["holdingsAsOf"]["year"]=list({d["year"] for d in partitions})[0]
     metadata["holdingsAsOf"]["month"]=list({d["month"] for d in partitions})[0]
+
+    [data, headers] = getJSON('partitions/stock_flows',{})
+    partitions=(data.get('result').get('partitions'))
+    metadata["stockFlows"]["year"]=list({d["year"] for d in partitions})[0]
+    metadata["stockFlows"]["month"]=list({d["month"] for d in partitions})[0]
+
     if asDataFrame:
         return pl.DataFrame(metadata)
     return metadata
@@ -46,6 +54,24 @@ def getShares():
     """
     params = build_shares_params()
     return getPartitions(endpoint="shares",params=params)
+
+def getStockFlows(format='parquet'):
+    """Load the full stock flows dataset into memory.
+
+    Args:
+        format (str, optional): File format requested from the API.
+
+    Returns:
+        polars.DataFrame: In-memory stock flows data returned by ``getPartitions``.
+    """
+    params = build_stock_flows_params()
+    metadata = getMetadata()
+
+    return getPartitions(endpoint="stock_flows",params=params,format=format).with_columns(
+        pl.lit(metadata["stockFlows"]["year"]).alias("year"),
+        pl.lit(metadata["stockFlows"]["month"]).alias("month")
+    )
+
 
 def getTimeseries(start='2019-01-01',end=None,ccy='eur',ids=None):
     """Load timeseries rows filtered by date range, currency, and optional IDs.

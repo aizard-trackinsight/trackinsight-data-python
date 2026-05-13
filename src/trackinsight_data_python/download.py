@@ -3,6 +3,7 @@ from ._params import (
     build_liquidity_params,
     build_reports_params,
     build_shares_params,
+    build_stock_flows_params,
     build_timeseries_params,
 )
 from .api import getMetadata
@@ -21,6 +22,26 @@ def downloadShares(format='parquet'):
     endpoint='shares'
     folder = endpoint
     params = build_shares_params()
+    getPartitions(endpoint=endpoint,folder=folder,params=params,format=format);
+
+    [host, key, data_dir, max_workers, verify_cert] = read_vars()
+
+    pattern = data_dir / format / folder / ("**/*."+format)
+
+    return str(pattern)
+
+def downloadStockFlows(format='parquet'):
+    """Download stock flows partitions to disk and return the output file pattern.
+
+    Args:
+        format (str, optional): File format requested from the API.
+
+    Returns:
+        str: Glob pattern pointing to downloaded files on disk.
+    """
+    endpoint='stock_flows'
+    folder = endpoint
+    params = build_stock_flows_params()
     getPartitions(endpoint=endpoint,folder=folder,params=params,format=format);
 
     [host, key, data_dir, max_workers, verify_cert] = read_vars()

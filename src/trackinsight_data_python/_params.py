@@ -29,6 +29,10 @@ def build_shares_params():
     return {}
 
 
+def build_stock_flows_params():
+    return {}
+
+
 def build_timeseries_params(start="2019-01-01", end=None, ccy="eur", ids=None):
     params = {"from": start, "to": end, "ccy": _normalize_ccy(ccy)}
     return _add_ids_param(params, ids)
