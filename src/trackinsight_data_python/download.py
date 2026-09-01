@@ -1,4 +1,5 @@
 from ._params import (
+    build_exposures_params,
     build_holdings_params,
     build_liquidity_params,
     build_reports_params,
@@ -49,6 +50,27 @@ def downloadStockFlows(format='parquet'):
     pattern = data_dir / format / folder / ("**/*."+format)
 
     return str(pattern)
+
+
+def downloadExposures(ids=None, format='parquet'):
+    """Download exposures partitions and return the output file pattern.
+
+    Args:
+        ids (list[int] | tuple[int] | None, optional): Optional share IDs to request.
+        format (str, optional): File format requested from the API.
+
+    Returns:
+        str: Glob pattern pointing to downloaded files on disk.
+    """
+    endpoint = 'exposures'
+    folder = endpoint
+    params = build_exposures_params(ids=ids)
+    getPartitions(endpoint=endpoint, folder=folder, params=params, format=format)
+
+    [host, key, data_dir, max_workers, verify_cert] = read_vars()
+    pattern = data_dir / format / folder / ("**/*." + format)
+    return str(pattern)
+
 
 def downloadReports(stamp=None,ccy='eur',format='parquet',periods=None):
     """Download report partitions for the given stamp and return the output pattern.
@@ -101,6 +123,30 @@ def downloadTimeseries(start,end,ccy='eur',format='parquet'):
 
     pattern = data_dir / format / folder / ("**/*."+format)
     
+    return str(pattern)
+
+def downloadMonthlyTimeseries(start,end,ccy='eur',format='parquet'):
+    """Download monthly timeseries partitions for a date range and return the output pattern.
+
+    Args:
+        start (str): Start date (inclusive), in ``YYYY-MM-DD`` format.
+        end (str): End date (inclusive), in ``YYYY-MM-DD`` format.
+        ccy (str, optional): Currency code.
+        format (str, optional): File format requested from the API.
+
+    Returns:
+        str: Glob pattern pointing to downloaded files on disk.
+    """
+    endpoint = 'monthly_timeseries'
+    folder = ccy+'_monthly_timeseries'
+    params = build_timeseries_params(start=start, end=end, ccy=ccy)
+
+    getPartitions(endpoint=endpoint,folder=folder,params=params,format=format);
+
+    [host, key, data_dir, max_workers, verify_cert] = read_vars()
+
+    pattern = data_dir / format / folder / ("**/*."+format)
+
     return str(pattern)
 
 def downloadHoldings(format='parquet',proxy=True,level=0,extraLines=False):

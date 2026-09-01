@@ -35,7 +35,7 @@ from dotenv import load_dotenv
 load_dotenv(override=True)
 
 ccy='usd'
-metadata= API.getMetadata()
+metadata = API.getMetadata()
 stamp = max(metadata["reportsAsOf"][ccy]) # get latest stamp for reports
 
 reports = API.getReports(ccy=ccy,stamp=stamp) # reports is a Polars DataFrame, you can use .to_pandas() to convert it to a Pandas DataFrame
@@ -87,10 +87,22 @@ stock_flows_df = API.getStockFlows(format='parquet')
 Loads the full stock flows dataset into a Polars DataFrame. `format` must be one of the supported formats and defaults to `parquet`.
 
 ```python
+exposures_df = API.getExposures(ids=None)
+```
+
+Loads exposures into a Polars DataFrame. Use `ids` to restrict the result to specific share IDs.
+
+```python
 timeseries_df = API.getTimeseries(start='2019-01-01', end=None, ccy='eur', ids=None)
 ```
 
 Loads timeseries rows for `ccy` between `start` and `end`. `ccy` must be one of the supported currencies. `start` and `end` use `YYYY-MM-DD` strings; `end=None` leaves the upper bound open. Use `ids` to restrict the result to specific share IDs.
+
+```python
+monthly_timeseries_df = API.getMonthlyTimeseries(start='2019-01-01', end=None, ccy='eur', ids=None)
+```
+
+Loads monthly timeseries rows for `ccy` between `start` and `end`. `ccy` must be one of the supported currencies. `start` and `end` use `YYYY-MM-DD` strings; `end=None` leaves the upper bound open. Use `ids` to restrict the result to specific share IDs.
 
 ```python
 reports_df = API.getReports(stamp=None, ccy='eur', ids=None, periods=None)
@@ -133,6 +145,12 @@ API.downloadStockFlows(format='parquet')
 Downloads the stock flows dataset to disk and returns a glob pattern for the downloaded files. `format` must be one of the supported formats and defaults to `parquet`.
 
 ```python
+API.downloadExposures(ids=None, format='parquet')
+```
+
+Downloads exposures to disk and returns a glob pattern for the downloaded files. Use `ids` to restrict the request to specific share IDs.
+
+```python
 API.downloadReports(stamp=None, ccy='eur', format='parquet', periods=None)
 ```
 
@@ -143,6 +161,12 @@ API.downloadTimeseries(start, end, ccy='eur', format='parquet')
 ```
 
 Downloads timeseries rows for `ccy` between `start` and `end`, then returns a glob pattern for the downloaded files. `ccy` must be one of the supported currencies. Dates use `YYYY-MM-DD` strings. `format` must be one of the supported formats and defaults to `parquet`.
+
+```python
+API.downloadMonthlyTimeseries(start, end, ccy='eur', format='parquet')
+```
+
+Downloads monthly timeseries rows for `ccy` between `start` and `end`, then returns a glob pattern for the downloaded files. `ccy` must be one of the supported currencies. Dates use `YYYY-MM-DD` strings. `format` must be one of the supported formats and defaults to `parquet`.
 
 ```python
 API.downloadHoldings(format='parquet', proxy=True, level=0, extraLines=False)

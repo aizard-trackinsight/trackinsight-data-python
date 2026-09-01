@@ -1,4 +1,5 @@
 from ._params import (
+    build_exposures_params,
     build_holdings_params,
     build_liquidity_params,
     build_reports_params,
@@ -56,7 +57,7 @@ def getShares():
     return getPartitions(endpoint="shares",params=params)
 
 def getStockFlows(format='parquet'):
-    """Load the full stock flows dataset into memory.
+    """Load the full stock flows dataset into memory. Flows are expressed in USD.
 
     Args:
         format (str, optional): File format requested from the API.
@@ -71,6 +72,24 @@ def getStockFlows(format='parquet'):
         pl.lit(metadata["stockFlows"]["year"]).alias("year"),
         pl.lit(metadata["stockFlows"]["month"]).alias("month")
     )
+
+
+def getExposures(ids=None):
+    """Load exposures rows, optionally filtered to specific share IDs.
+
+    Args:
+        ids (list[int] | tuple[int] | None, optional): Optional share IDs to filter.
+
+    Returns:
+        polars.DataFrame: In-memory exposures data returned by ``getPartitions``.
+    """
+    params = build_exposures_params(ids=ids)
+    data = getPartitions(endpoint="exposures", params=params)
+
+    if data is not None and should_filter_ids_locally(ids):
+        data = data.filter(pl.col("share_id").is_in(ids))
+
+    return data
 
 
 def getTimeseries(start='2019-01-01',end=None,ccy='eur',ids=None):
@@ -88,6 +107,28 @@ def getTimeseries(start='2019-01-01',end=None,ccy='eur',ids=None):
     
     params = build_timeseries_params(start=start, end=end, ccy=ccy, ids=ids)
     data = getPartitions(endpoint="timeseries",params=params)
+
+    if data is not None:
+        if should_filter_ids_locally(ids):
+            data = data.filter(pl.col("id").is_in(ids))
+
+    return data
+
+def getMonthlyTimeseries(start='2019-01-01',end=None,ccy='eur',ids=None):
+    """Load monthly timeseries rows filtered by date range, currency, and optional IDs.
+
+    Args:
+        start (str, optional): Start date (inclusive), in ``YYYY-MM-DD`` format.
+        end (str | None, optional): End date (inclusive), in ``YYYY-MM-DD`` format.
+        ccy (str, optional): Currency code.
+        ids (list[int] | tuple[int] | None, optional): Optional share IDs to filter.
+
+    Returns:
+        polars.DataFrame: In-memory monthly timeseries data returned by ``getPartitions``.
+    """
+
+    params = build_timeseries_params(start=start, end=end, ccy=ccy, ids=ids)
+    data = getPartitions(endpoint="monthly_timeseries",params=params)
 
     if data is not None:
         if should_filter_ids_locally(ids):
